@@ -2,3 +2,4 @@ alphapilot_imgs/*
 alphapilot_extended_imgs/*
 .idea/
 transformed_training_GT_labels_v2.json
+model.pth

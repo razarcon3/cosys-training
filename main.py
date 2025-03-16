@@ -142,7 +142,7 @@ def train(dataset):
 
     # --- Optimizer and Scheduler ---
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.Adam(params, lr=0.001, weight_decay=0.0005)  # Added weight decay
+    optimizer = torch.optim.Adam(params, lr=0.01, weight_decay=0.0005)  # Added weight decay
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
     # --- Training Loop ---
@@ -168,27 +168,33 @@ def train(dataset):
         train_loss /= len(train_dataset)  # Average loss per sample
         epoch_time = time.time() - start_time
 
-        # --- Validation Loop ---
-        model.eval()  # Set the model to evaluation mode
-        valid_loss = 0.0
-        with torch.no_grad():  # Disable gradient calculations during validation
-            for images, targets in valid_loader:
-                images = list(image.to(device) for image in images)
-                targets = [{k: v.to(device) for k, v in t.items() if isinstance(v, torch.Tensor)} for t in targets]
-
-                loss_dict = model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
-                valid_loss += losses.item() * len(images)
-
-        valid_loss /= len(valid_dataset)
+        # # --- Validation Loop ---
+        # model.eval()  # Set the model to evaluation mode
+        # valid_loss = 0.0
+        # with torch.no_grad():  # Disable gradient calculations during validation
+        #     for images, targets in valid_loader:
+        #         images = list(image.to(device) for image in images)
+        #         targets = [{k: v.to(device) for k, v in t.items() if isinstance(v, torch.Tensor)} for t in targets]
+        #
+        #         loss_dict = model(images, targets)
+        #         losses = sum(loss for loss in loss_dict.values())
+        #         valid_loss += losses.item() * len(images)
+        #
+        # valid_loss /= len(valid_dataset)
         lr_scheduler.step() # Step the scheduler after each epoch.
+
+        # print(f'Epoch: {epoch + 1}/{num_epochs}, '
+        #       f'Train Loss: {train_loss:.4f}, '
+        #       f'Valid Loss: {valid_loss:.4f}, '
+        #       f'Time: {epoch_time:.2f}s, '
+        #       f'LR: {optimizer.param_groups[0]["lr"]:.6f}')
 
         print(f'Epoch: {epoch + 1}/{num_epochs}, '
               f'Train Loss: {train_loss:.4f}, '
-              f'Valid Loss: {valid_loss:.4f}, '
               f'Time: {epoch_time:.2f}s, '
               f'LR: {optimizer.param_groups[0]["lr"]:.6f}')
 
+    torch.save(model.state_dict(), "model.pth")
     print("Training complete!")
 def main():
     # Define dataset and dataloader
