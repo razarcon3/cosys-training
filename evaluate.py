@@ -1,8 +1,9 @@
 import torch
 import cv2
 from DroneGateDataset import DroneGateDataset
+import numpy as np
 
-MODEL_PATH = "model.pth"
+MODEL_PATH = "full_model.pth"
 TEST_DATASET_IMGS_PATH = "alphapilot_extended_testing_imgs"
 TEST_DATASET_LABELS_PATH = "transformed_testing_GT_labels_v2.json"
 
@@ -49,7 +50,7 @@ def visualize_predictions_cv2(image, gt_boxes, pred_boxes, pred_scores=None):
 
 def main():
     # Load the model
-    model = torch.load(MODEL_PATH)
+    model = torch.load(MODEL_PATH, weights_only=False)
     model.eval()
 
     # Load the test dataset
@@ -80,12 +81,12 @@ def main():
             gt_boxes = targets['boxes'].tolist()
 
             # apply non-maximum suppression to avoid several boxes for one gate
-            selected_indices = cv2.dnn.NMSBoxes(pred_boxes, pred_scores, score_threshold=0.5, nms_threshold=0.2)
+            selected_indices = cv2.dnn.NMSBoxes(pred_boxes, pred_scores, score_threshold=0.5, nms_threshold=0.8)
 
             filtered_pred_boxes = []
             filtered_pred_scores = []
 
-            if selected_indices.size > 0:  # check that selected indices is not empty
+            if len(selected_indices) > 0:  # check that selected indices is not empty
                 for idx in selected_indices:
                     filtered_pred_boxes.append(pred_boxes[idx])
                     filtered_pred_scores.append(pred_scores[idx])

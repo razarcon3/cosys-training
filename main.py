@@ -7,7 +7,7 @@ import cv2
 import torch
 from torch.utils.data import DataLoader
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, FasterRCNN_ResNet50_FPN_Weights
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2
 from typing import Dict
 from tqdm import tqdm
 from DroneGateDataset import DroneGateDataset
@@ -51,11 +51,11 @@ def visualize_labels(image: np.ndarray, target: Dict):
 
 def train(dataset):
     # --- Data Loaders ---
-    train_loader = DataLoader(dataset, batch_size=5, shuffle=True,
+    train_loader = DataLoader(dataset, batch_size=4, shuffle=True,
                               collate_fn=lambda x: tuple(zip(*x)))
 
     # --- Model Setup ---
-    model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.COCO_V1)
+    model = fasterrcnn_resnet50_fpn_v2()
     num_classes = 2  # 1 class (gate_corner) + background.  MUST be 2.
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
@@ -66,11 +66,12 @@ def train(dataset):
 
     # --- Optimizer and Scheduler ---
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.Adam(params, lr=0.001, weight_decay=0.0005)  # Added weight decay
+    optimizer = torch.optim.SGD(params, lr=0.005, momentum=0.9,
+                                weight_decay=0.0005)
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
     # --- Training Loop ---
-    num_epochs = 15
+    num_epochs = 10
     for epoch in range(num_epochs):
         start_time = time.time()  # Time the epoch
         model.train()
@@ -89,7 +90,7 @@ def train(dataset):
             optimizer.step()
             train_loss += losses.item()
 
-        train_loss /= len(dataset)  # Average loss per sample
+        train_loss /= len(train_loader)  # Average loss per sample
         epoch_time = time.time() - start_time
 
         lr_scheduler.step()  # Step the scheduler after each epoch.
